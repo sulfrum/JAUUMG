@@ -2,38 +2,125 @@
 <html lang="it">
 <head>
   <meta charset="UTF-8">
-  <title>Dungeon Frame Test</title>
+  <title>JAUUMG</title>
   <style>
-    body { background: #0d0d0d; display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; margin: 0; font-family: monospace; }
-    canvas { border: 2px solid #444; border-radius: 4px; }
-    p { color: #555; font-size: 13px; margin-top: 8px; }
+    body {
+      background: #0d0d0d;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+      margin: 0;
+      font-family: monospace;
+      color: #aaa;
+    }
+    canvas {
+      border: 2px solid #333;
+      border-radius: 4px;
+    }
+    #info {
+      margin-top: 8px;
+      font-size: 12px;
+      color: #555;
+    }
   </style>
 </head>
 <body>
-  <canvas id="c" width="600" height="400"></canvas>
-  <p id="info"></p>
+  <canvas id="c"></canvas>
+  <div id="info"></div>
+
   <script>
-    const canvas = document.getElementById('c');
-    const ctx = canvas.getContext('2d');
-    const W = canvas.width, H = canvas.height;
-    const TILE = 20;
-    const COLS = W / TILE, ROWS = H / TILE;
 
-    function draw() {
-      ctx.fillStyle = '#111';
-      ctx.fillRect(0, 0, W, H);
+    // -------------------------------------------------------
+    // Dungeon: struttura dati della mappa
+    // -------------------------------------------------------
+    class Dungeon {
+      constructor(cols, rows) {
+        this.cols = cols;
+        this.rows = rows;
+        this.grid = Array.from({ length: rows }, () => new Array(cols).fill(1));
+      }
 
-      for (let r = 0; r < ROWS; r++) {
-        for (let c = 0; c < COLS; c++) {
-          const isWall = r === 0 || r === ROWS-1 || c === 0 || c === COLS-1;
-          ctx.fillStyle = isWall ? '#888' : '#1a1a2e';
-          ctx.fillRect(c * TILE + 1, r * TILE + 1, TILE - 2, TILE - 2);
+      setTile(x, y, value) {
+        if (this.inBounds(x, y)) this.grid[y][x] = value;
+      }
+
+      getTile(x, y) {
+        if (!this.inBounds(x, y)) return 1; // fuori bounds = muro
+        return this.grid[y][x];
+      }
+
+      inBounds(x, y) {
+        return x >= 0 && x < this.cols && y >= 0 && y < this.rows;
+      }
+
+      // scava un rettangolo di pavimento
+      carveRect(x, y, w, h) {
+        for (let row = y; row < y + h; row++) {
+          for (let col = x; col < x + w; col++) {
+            this.setTile(col, row, 0);
+          }
         }
       }
     }
 
-    document.getElementById('info').textContent = `${COLS} × ${ROWS} celle  |  tile ${TILE}px`;
-    draw();
+
+    // -------------------------------------------------------
+    // Renderer: disegna il Dungeon sul canvas
+    // -------------------------------------------------------
+    class Renderer {
+      constructor(canvas, dungeon, tileSize = 20) {
+        this.canvas = canvas;
+        this.ctx = canvas.getContext('2d');
+        this.dungeon = dungeon;
+        this.tileSize = tileSize;
+
+        this.canvas.width  = dungeon.cols * tileSize;
+        this.canvas.height = dungeon.rows * tileSize;
+
+        this.colors = {
+          0: '#1a1a2e', // pavimento
+          1: '#555566', // muro
+        };
+      }
+
+      draw() {
+        const { ctx, dungeon, tileSize, colors } = this;
+        const T = tileSize;
+
+        ctx.fillStyle = '#111';
+        ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
+
+        for (let row = 0; row < dungeon.rows; row++) {
+          for (let col = 0; col < dungeon.cols; col++) {
+            const tile = dungeon.getTile(col, row);
+            ctx.fillStyle = colors[tile] ?? '#ff0000';
+            ctx.fillRect(col * T + 1, row * T + 1, T - 2, T - 2);
+          }
+        }
+      }
+    }
+
+
+    // -------------------------------------------------------
+    // Main
+    // -------------------------------------------------------
+    const COLS = 40, ROWS = 25, TILE = 20;
+
+    const dungeon = new Dungeon(COLS, ROWS);
+
+    // test: scava due stanze manuali
+    dungeon.carveRect(5, 3, 10, 8);
+    dungeon.carveRect(20, 10, 12, 6);
+
+    const canvas = document.getElementById('c');
+    const renderer = new Renderer(canvas, dungeon, TILE);
+    renderer.draw();
+
+    document.getElementById('info').textContent =
+      `${COLS}×${ROWS} celle  |  tile ${TILE}px`;
+
   </script>
 </body>
 </html>
