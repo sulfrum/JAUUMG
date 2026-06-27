@@ -1,2 +1,2 @@
 # JAUUMG
-Justa another useless unfinished maze generator
+Just Another Useless Unfinished Maze Generator
