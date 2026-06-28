@@ -133,12 +133,19 @@
         this.h = h;
       }
       
+	  center() {
+	    return {
+		  x: Math.floor(this.x + this.w / 2),
+		  y: Math.floor(this.y + this.h / 2)
+	    };
+      }	  
+	  
       intersects( otherRoom ){
         return (
-          this.x < otherRoom.x + otherRoom.w +1 &&
-          this.x + this.w +1 > otherRoom.x &&
-          this.y < otherRoom.y + otherRoom.h +1 &&
-          this.y + this.h +1 > otherRoom.y
+           this.x < otherRoom.x + otherRoom.w +1 &&
+           this.x + this.w +1 > otherRoom.x &&
+           this.y < otherRoom.y + otherRoom.h +1 &&
+           this.y + this.h +1 > otherRoom.y
         );
       }
       
@@ -177,8 +184,27 @@
           }
         }
       }
-      
-          
+ 
+      carveHorizontalCorridor(x1, x2, y) {
+        const start = Math.min(x1, x2);
+        const end = Math.max(x1, x2);
+
+        for (let x = start; x <= end; x++) {
+          this.setTile(x, y, 0);
+        }
+      }
+
+      carveVerticalCorridor(y1, y2, x) {
+        const start = Math.min(y1, y2);
+        const end = Math.max(y1, y2);
+
+        for (let y = start; y <= end; y++) {
+          this.setTile(x, y, 0);
+        }
+	  }
+
+       
+
       createRooms(num) {
         const minW = 2;
         
@@ -215,13 +241,34 @@
           }
         } 
 
+		
+		
         return {
           roomsCreated: this.rooms.length,
           attempts: attempts,
           maxAttempts: maxAttempts,
           rooms: this.rooms
         };
-    }}
+    }
+	
+	connectRooms(roomA, roomB) {
+			const centerA = roomA.center();
+			const centerB = roomB.center();
+			
+			
+			this.carveHorizontalCorridor(centerA.x, centerB.x, centerA.y);
+			this.carveVerticalCorridor(centerA.y, centerB.y, centerB.x);
+		}
+	
+	connectAllRooms() {
+	  const sortedRooms = [...this.rooms].sort((a, b) => a.x - b.x);
+
+	  for (let i = 0; i < sortedRooms.length - 1; i++) {
+		this.connectRooms(sortedRooms[i], sortedRooms[i + 1]);
+	  }
+	}	
+	
+	}
 
 
     // -------------------------------------------------------
@@ -275,6 +322,8 @@
 
       const dungeon = new Dungeon(cols, rows);
       const result = dungeon.createRooms(numRooms);
+	  //dungeon.connectRooms(result.rooms[0], result.rooms[1]);
+      dungeon.connectAllRooms();
 
       const canvas = document.getElementById('c');
       const renderer = new Renderer(canvas, dungeon, tile);
