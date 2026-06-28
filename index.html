@@ -33,13 +33,47 @@
   <script>
 
     // -------------------------------------------------------
+    // funzioni globali
+    // -------------------------------------------------------
+
+    function getRandomInt(min, max) {
+      const minCeiled = Math.ceil(min);
+      const maxFloored = Math.floor(max);
+      return Math.floor(Math.random() * (maxFloored - minCeiled) + minCeiled); // The maximum is exclusive and the minimum is inclusive
+    }
+
+    // -------------------------------------------------------
+    // Room: struttura dati delle singole stanze
+    // -------------------------------------------------------
+    class Room  {
+      constructor(x, y, w, h) {
+        this.x = x;
+        this.y = y;
+        this.w = w;
+        this.h = h;
+      }
+      
+      intersects( otherRoom ){
+        return (
+          this.x < otherRoom.x + otherRoom.w +1 &&
+          this.x + this.w +1 > otherRoom.x &&
+          this.y < otherRoom.y + otherRoom.h +1 &&
+          this.y + this.h +1 > otherRoom.y
+        );
+      }
+      
+    }
+
+    // -------------------------------------------------------
     // Dungeon: struttura dati della mappa
     // -------------------------------------------------------
+    
     class Dungeon {
       constructor(cols, rows) {
         this.cols = cols;
         this.rows = rows;
         this.grid = Array.from({ length: rows }, () => new Array(cols).fill(1));
+        this.rooms = []
       }
 
       setTile(x, y, value) {
@@ -63,7 +97,47 @@
           }
         }
       }
-    }
+      
+          
+      createRooms(num) {
+        const minW = 2;
+        
+        const maxW = Math.floor(this.cols / 2);
+        const minH = 2;
+        const maxH = Math.floor(this.rows / 2);
+
+        const maxAttempts = num * 20;
+        let attempts = 0;
+
+        while (this.rooms.length < num && attempts < maxAttempts) {
+          attempts++;
+
+          const w = getRandomInt(minW, maxW + 1);
+          const h = getRandomInt(minH, maxH + 1);
+
+          const x = getRandomInt(1, this.cols - w);
+          const y = getRandomInt(1, this.rows - h);
+
+          const newRoom = new Room(x, y, w, h);
+
+          let overlaps = false;
+
+          for (const room of this.rooms) {
+            if (newRoom.intersects(room)) {
+              overlaps = true;
+              break;
+            }
+          }
+
+          if (!overlaps) {
+            this.rooms.push(newRoom);
+            this.carveRect(newRoom.x, newRoom.y, newRoom.w, newRoom.h);
+          }
+        } 
+
+        return this.rooms.length;
+      }
+     }
 
 
     // -------------------------------------------------------
@@ -102,7 +176,6 @@
       }
     }
 
-
     // -------------------------------------------------------
     // Main
     // -------------------------------------------------------
@@ -111,15 +184,17 @@
     const dungeon = new Dungeon(COLS, ROWS);
 
     // test: scava due stanze manuali
-    dungeon.carveRect(5, 3, 10, 8);
-    dungeon.carveRect(20, 10, 12, 6);
+    //dungeon.carveRect(5, 3, 10, 8);
+    //dungeon.carveRect(20, 10, 12, 6);
+    
+    roomnumbers = dungeon.createRooms(5);
 
     const canvas = document.getElementById('c');
     const renderer = new Renderer(canvas, dungeon, TILE);
     renderer.draw();
 
     document.getElementById('info').textContent =
-      `${COLS}×${ROWS} celle  |  tile ${TILE}px`;
+      `${COLS}×${ROWS} celle  |  tile ${TILE}px / rooms ${roomnumbers}`;
 
   </script>
 </body>
