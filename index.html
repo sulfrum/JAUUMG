@@ -251,7 +251,7 @@
         };
     }
 	
-	connectRooms(roomA, roomB) {
+	connectRoomsLD(roomA, roomB) {
 			const centerA = roomA.center();
 			const centerB = roomB.center();
 			
@@ -259,12 +259,25 @@
 			this.carveHorizontalCorridor(centerA.x, centerB.x, centerA.y);
 			this.carveVerticalCorridor(centerA.y, centerB.y, centerB.x);
 		}
+
+	connectRoomsDL(roomA, roomB) {
+			const centerA = roomA.center();
+			const centerB = roomB.center();
+			
+			this.carveVerticalCorridor(centerA.y, centerB.y, centerA.x);
+			this.carveHorizontalCorridor(centerA.x, centerB.x, centerB.y);
+		}
 	
 	connectAllRooms() {
 	  const sortedRooms = [...this.rooms].sort((a, b) => a.x - b.x);
 
 	  for (let i = 0; i < sortedRooms.length - 1; i++) {
-		this.connectRooms(sortedRooms[i], sortedRooms[i + 1]);
+		const useLD = getRandomInt(0,2) === 0;
+		if (useLD) {
+          this.connectRoomsLD(sortedRooms[i], sortedRooms[i + 1]);
+		} else {
+		  this.connectRoomsDL(sortedRooms[i], sortedRooms[i + 1]);
+		}
 	  }
 	}	
 	
